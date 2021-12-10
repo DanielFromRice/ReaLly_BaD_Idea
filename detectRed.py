@@ -34,7 +34,7 @@ def isMostlyColor(image, redBoundary):
     result = (np.count_nonzero(mask) > (mask.size - np.count_nonzero(mask)))
     return result, output
 
-video = cv2.VideoCapture(1)
+video = cv2.VideoCapture(0)
 video.set(cv2.CAP_PROP_FRAME_WIDTH, 320)
 video.set(cv2.CAP_PROP_FRAME_HEIGHT, 240)
 
@@ -53,14 +53,15 @@ while(1):
     if ret == False:
         continue
     frame = cv2.flip(frame, -1)
+    frame = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
     # cv2.imshow("original", frame)
-    floorStop, _ = isFloorStop(frame)
+    floorStop, output = isFloorStop(frame)
     if floorStop:
         print(True)
     else:
         print(False)
-    # cv2.imshow("images", output)
+    cv2.imshow("images", output)
     key = cv2.waitKey(1)
     if key == 27:
         break

@@ -3,44 +3,48 @@ import numpy as np
 import math
 import sys
 import time
-import RPi.GPIO as GPIO
+import Adafruit_BBIO.GPIO as GPIO
+import Adafruit_BBIO.PWM as PWM
 
 GPIO.setwarnings(False)
 
 #throttle
-throttlePin = 25 # Physical pin 22
-in3 = 23 # physical Pin 16
-in4 = 24 # physical Pin 18
+throttlePin = "P8_13" # Physical pin 22
 
 #Steering
-steeringPin = 22 # Physical Pin 15
-in1 = 17 # Physical Pin 11
-in2 = 27 # Physical Pin 13
+steeringPin = "P9_14" # Physical Pin 15
 
+#GPIO.setup(throttlePin,GPIO.OUT)
+#GPIO.setup(steeringPin,GPIO.OUT)
 
-GPIO.setmode(GPIO.BCM)
-GPIO.setup(in1,GPIO.OUT)
-GPIO.setup(in2,GPIO.OUT)
-GPIO.setup(in3,GPIO.OUT)
-GPIO.setup(in4,GPIO.OUT)
-
-GPIO.setup(throttlePin,GPIO.OUT)
-GPIO.setup(steeringPin,GPIO.OUT)
-
-# Steering
-# in1 = 1 and in2 = 0 -> Left
-GPIO.output(in1,GPIO.LOW)
-GPIO.output(in2,GPIO.LOW)
-steering = GPIO.PWM(steeringPin,1000)
-steering.stop()
 
 # Throttle
-# in3 = 1 and in4 = 0 -> Forward
-GPIO.output(in3,GPIO.HIGH)
-GPIO.output(in4,GPIO.LOW)
-throttle = GPIO.PWM(throttlePin,1000)
-throttle.stop()
 
+def initialize_car():
+    # give 7.5% duty at 50Hz to throttle
+    print("starting function")
+    PWM.start(throttlePin, 7.5, frequency=50)
+    print("did the pwm")
+    input()
+    PWM.set_duty_cycle(throttlePin, 8.2)
+    print("forward")
+    input()
+    PWM.set_duty_cycle(throttlePin, 6.8)
+    print("back")
+    input()
+    PWM.set_duty_cycle(throttlePin, 7.5)
+     
+    PWM.start(steeringPin, 7.5, frequency=50)
+    print("go gayly forward")
+    time.sleep(1)
+    PWM.set_duty_cycle(steeringPin, 6)
+    print("one direction")
+    time.sleep(1)
+    PWM.set_duty_cycle(steeringPin, 9)
+    print("other direction")
+    time.sleep(1)
+    PWM.set_duty_cycle(steeringPin, 7.5)
+    
 
 
 def detect_edges(frame):
@@ -200,6 +204,9 @@ def get_steering_angle(frame, lane_lines):
     
     return steering_angle
 
+initialize_car()
+exit()
+
 video = cv2.VideoCapture(0)
 video.set(cv2.CAP_PROP_FRAME_WIDTH,320)
 video.set(cv2.CAP_PROP_FRAME_HEIGHT,240)
@@ -217,7 +224,11 @@ lastError = 0
 kp = 0.4
 kd = kp * 0.65
 
-while True:
+counter = 0
+
+while counter < 100:
+    # check for stop sign/traffic light every couple ticks
+
     ret,frame = video.read()
     frame = cv2.flip(frame,-1)
     
@@ -263,7 +274,7 @@ while True:
     if spd > 25:
         spd = 25
         
-    throttle.start(spd)
+    # throttle.start(spd) - we keep the speed low and constant
 
     lastError = error
     lastTime = time.time()
@@ -274,6 +285,8 @@ while True:
     key = cv2.waitKey(1)
     if key == 27:
         break
+
+    counter += 1
     
 video.release()
 ##out.release()

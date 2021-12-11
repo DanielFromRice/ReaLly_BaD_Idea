@@ -5,20 +5,24 @@ import sys
 import time
 import Adafruit_BBIO.PWM as PWM
 
-#throttle
-throttlePin = "P8_13" # Physical pin 22
+#Throttle
+throttlePin = "P8_13"
+go_forward = 7.935
+dont_move = 7.5
 
 #Steering
-steeringPin = "P9_14" # Physical Pin 15
+steeringPin = "P9_14"
+left = 9
+right = 6
 
 #Max number of loops
-max_ticks = 2000 
+max_ticks = 20000 
 
 
 def initialize_car():
     # give 7.5% duty at 50Hz to throttle
     print("starting function")
-    PWM.start(throttlePin, 7.5, frequency=50)
+    PWM.start(throttlePin, dont_move, frequency=50)
     print("did the pwm")
     
     input()
@@ -32,7 +36,7 @@ def initialize_car():
     input()
     PWM.set_duty_cycle(throttlePin, 7.5)
     """ 
-    PWM.start(steeringPin, 7.5, frequency=50)
+    PWM.start(steeringPin, dont_move, frequency=50)
     """ 
     print("go gayly forward")
     time.sleep(1)
@@ -220,10 +224,10 @@ lastTime = 0
 lastError = 0
 
 kp = 0.05
-kd = kp * 0.65
+kd = kp * 0.75
 
 counter = 0
-#PWM.set_duty_cycle(throttlePin, 7.92)
+#PWM.set_duty_cycle(throttlePin, go_forward)
 
 while counter < max_ticks:
     # check for stop sign/traffic light every couple ticks
@@ -248,7 +252,7 @@ while counter < max_ticks:
     # error = abs(deviation)
 
     ### PD Code, remove if breaking things
-    error = deviation
+    error = -deviation
     base_turn = 7.5
     proportional = kp * error
     derivative = kd * (error - lastError) / dt
@@ -258,12 +262,13 @@ while counter < max_ticks:
     if turn_amt > 7.2 and turn_amt < 7.8:
         # May not need this condition
         turn_amt = 7.5
-    elif turn_amt > 9:
-        turn_amt = 9
-    elif turn_amt < 6:
-        turn_amt = 6
+    elif turn_amt > left:
+        turn_amt = left
+    elif turn_amt < right:
+        turn_amt = right
 
     PWM.set_duty_cycle(steeringPin, turn_amt)
+    print(turn_amt)
 
     # Set throttle here
 

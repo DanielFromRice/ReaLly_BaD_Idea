@@ -67,9 +67,6 @@ def isMostlyColor(image, redBoundary):
         print(percentage_detected)
     return result, output
 
-video = cv2.VideoCapture(1)
-video.set(cv2.CAP_PROP_FRAME_WIDTH, 320)
-video.set(cv2.CAP_PROP_FRAME_HEIGHT, 240)
 
 def getBoundaries(filename):
     """
@@ -102,30 +99,32 @@ def getBoundaries(filename):
         boundaries = [lower, upper]
         percentages = [lower_percent, upper_percent]
     return boundaries, percentages
-
-
-while(1):
-    ret, frame = video.read()
-    if ret == False:
-        print("Erroring out")
-        continue
-    # frame = cv2.flip(frame, -1)
-    frame = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-
-    # cv2.imshow("original", frame)
-    floorStop, floor_output = isFloorStop(frame)
-    trafficStop, traffic_output = isTrafficStop(frame)
-    if trafficStop:
-        print("Traffic stop detected!")
-    trafficGo, traffic_green_output = isGreenLight(frame)
-    if trafficGo:
-        print("Traffic Go detected!")
-    #
-    # if floorStop:
-    #     print(True)
-    # else:
-    #     print(False)
-    cv2.imshow("images", np.hstack([traffic_output, traffic_green_output]))
-    key = cv2.waitKey(1)
-    if key == 27:
-        break
+# video = cv2.VideoCapture(1)
+# video.set(cv2.CAP_PROP_FRAME_WIDTH, 320)
+# video.set(cv2.CAP_PROP_FRAME_HEIGHT, 240)
+#
+# while(1):
+#     ret, frame = video.read()
+#     if ret == False:
+#         print("Erroring out")
+#         continue
+#     # frame = cv2.flip(frame, -1)
+#     frame = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+#
+#     # cv2.imshow("original", frame)
+#     floorStop, floor_output = isFloorStop(frame)
+#     trafficStop, traffic_output = isTrafficStop(frame)
+#     if trafficStop:
+#         print("Traffic stop detected!")
+#     trafficGo, traffic_green_output = isGreenLight(frame)
+#     if trafficGo:
+#         print("Traffic Go detected!")
+#     #
+#     # if floorStop:
+#     #     print(True)
+#     # else:
+#     #     print(False)
+#     cv2.imshow("images", np.hstack([traffic_output, traffic_green_output]))
+#     key = cv2.waitKey(1)
+#     if key == 27:
+#         break

@@ -3,10 +3,7 @@ import numpy as np
 import math
 import sys
 import time
-import Adafruit_BBIO.GPIO as GPIO
 import Adafruit_BBIO.PWM as PWM
-
-GPIO.setwarnings(False)
 
 #throttle
 throttlePin = "P8_13" # Physical pin 22
@@ -14,37 +11,39 @@ throttlePin = "P8_13" # Physical pin 22
 #Steering
 steeringPin = "P9_14" # Physical Pin 15
 
-#GPIO.setup(throttlePin,GPIO.OUT)
-#GPIO.setup(steeringPin,GPIO.OUT)
+#Max number of loops
+max_ticks = 2000 
 
-
-# Throttle
 
 def initialize_car():
     # give 7.5% duty at 50Hz to throttle
     print("starting function")
     PWM.start(throttlePin, 7.5, frequency=50)
     print("did the pwm")
+    
     input()
-    PWM.set_duty_cycle(throttlePin, 8.2)
+    """
+    PWM.set_duty_cycle(throttlePin, 7.92)
     print("forward")
-    input()
-    PWM.set_duty_cycle(throttlePin, 6.8)
+    time.sleep(10)
+    PWM.set_duty_cycle(throttlePin, 7.5)
+    PWM.set_duty_cycle(throttlePin, 7.05)
     print("back")
     input()
     PWM.set_duty_cycle(throttlePin, 7.5)
-     
+    """ 
     PWM.start(steeringPin, 7.5, frequency=50)
+    """ 
     print("go gayly forward")
     time.sleep(1)
     PWM.set_duty_cycle(steeringPin, 6)
-    print("one direction")
-    time.sleep(1)
+    print("going to 6")
+    input()
     PWM.set_duty_cycle(steeringPin, 9)
-    print("other direction")
-    time.sleep(1)
+    print("going to 9")
+    input()
     PWM.set_duty_cycle(steeringPin, 7.5)
-    
+    """
 
 
 def detect_edges(frame):
@@ -77,7 +76,7 @@ def region_of_interest(edges):
     cv2.fillPoly(mask, polygon, 255)
     
     cropped_edges = cv2.bitwise_and(edges, mask)
-    cv2.imshow("roi",cropped_edges)
+    #cv2.imshow("roi",cropped_edges)
     
     return cropped_edges
 
@@ -205,7 +204,6 @@ def get_steering_angle(frame, lane_lines):
     return steering_angle
 
 initialize_car()
-exit()
 
 video = cv2.VideoCapture(0)
 video.set(cv2.CAP_PROP_FRAME_WIDTH,320)
@@ -225,14 +223,15 @@ kp = 0.4
 kd = kp * 0.65
 
 counter = 0
+#PWM.set_duty_cycle(throttlePin, 7.92)
 
-while counter < 100:
+while counter < max_ticks:
     # check for stop sign/traffic light every couple ticks
 
     ret,frame = video.read()
     frame = cv2.flip(frame,-1)
     
-    cv2.imshow("original",frame)
+    #cv2.imshow("original",frame)
     edges = detect_edges(frame)
     roi = region_of_interest(edges)
     line_segments = detect_line_segments(roi)
@@ -251,20 +250,14 @@ while counter < 100:
     if deviation < 5 and deviation > -5:
         deviation = 0
         error = 0
-        GPIO.output(in1,GPIO.LOW)
-        GPIO.output(in2,GPIO.LOW)
-        steering.stop()
+        PWM.set_duty_cycle(steeringPin, 7.5)
 
     elif deviation > 5:
-        GPIO.output(in1,GPIO.LOW)
-        GPIO.output(in2,GPIO.HIGH)
-        steering.start(100)
+        PWM.set_duty_cycle(steeringPin, 6) 
         
 
     elif deviation < -5:
-        GPIO.output(in1,GPIO.HIGH)
-        GPIO.output(in2,GPIO.LOW)
-        steering.start(100)
+        PWM.set_duty_cycle(steeringPin, 9) 
 
     derivative = kd * (error - lastError) / dt
     proportional = kp * error
@@ -292,10 +285,9 @@ video.release()
 ##out.release()
 ##out2.release()
 cv2.destroyAllWindows()
-GPIO.output(in1,GPIO.LOW)
-GPIO.output(in2,GPIO.LOW)
-GPIO.output(in3,GPIO.LOW)
-GPIO.output(in4,GPIO.LOW)
-throttle.stop()
-steering.stop()
+PWM.set_duty_cycle(throttlePin, 7.5)
+PWM.set_duty_cycle(steeringPin, 7.5)
+PWM.stop(throttlePin)
+PWM.stop(steeringPin)
+PWM.cleanup()
 

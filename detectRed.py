@@ -7,7 +7,7 @@ def getImage():
     image = cv2.imread("red.png")
     return image
 
-def getRedBoundaries():
+def getFloorRedBoundaries():
     return getBoundaries("redboundaries.txt")
 
 def isFloorStop(frame):
@@ -16,7 +16,36 @@ def isFloorStop(frame):
     :param frame: Image
     :return: (True is the camera sees a stop light on the floor, false otherwise) and video output
     """
-    boundaries = getRedBoundaries()
+    boundaries = getFloorRedBoundaries()
+    return isMostlyColor(frame, boundaries)
+
+
+def getTrafficStopBoundaries():
+    return getBoundaries("trafficRedBoundaries.txt")
+
+
+def isTrafficStop(frame):
+    """
+    Detects whether or not we can see a stop sign
+    :param frame: 
+    :return: 
+    """
+    
+    boundaries = getTrafficStopBoundaries()
+    return isMostlyColor(frame, boundaries)
+
+
+def getTrafficGoBoundaries():
+    return getBoundaries("trafficGreenboundaries.txt")
+
+
+def isGreenLight(frame):
+    """
+    Detects whether or not we can see a green traffic light
+    :param frame: 
+    :return: 
+    """
+    boundaries = getTrafficGoBoundaries()
     return isMostlyColor(frame, boundaries)
 
 def isMostlyColor(image, redBoundary):
@@ -56,12 +85,15 @@ while(1):
     frame = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
     # cv2.imshow("original", frame)
-    floorStop, output = isFloorStop(frame)
-    if floorStop:
-        print(True)
-    else:
-        print(False)
-    cv2.imshow("images", output)
+    floorStop, floor_output = isFloorStop(frame)
+    trafficStop, traffic_output = isTrafficStop(frame)
+    trafficGo, traffic_green_output = isGreenLight(frame)
+    #
+    # if floorStop:
+    #     print(True)
+    # else:
+    #     print(False)
+    cv2.imshow("images", np.hstack([traffic_output, traffic_green_output]))
     key = cv2.waitKey(1)
     if key == 27:
         break

@@ -4,7 +4,7 @@ import math
 import sys
 import time
 import Adafruit_BBIO.PWM as PWM
-import detectRed
+# import detectRed
 
 #throttle
 throttlePin = "P8_13" # Physical pin 22
@@ -241,9 +241,9 @@ while counter < max_ticks:
     steering_angle = get_steering_angle(frame, lane_lines)
     heading_image = display_heading_line(lane_lines_image,steering_angle)
     cv2.imshow("heading line",heading_image)
-    floorRed = detectRed.isFloorStop(frame)[1]
-    trafficRed = detectRed.isTrafficStop(frame)[1]
-    cv2.imshow("FloorStop[left] trafficStop[right]", np.hstack([floorRed, trafficRed]))
+    # floorRed = detectRed.isFloorStop(frame)[1]
+    # trafficRed = detectRed.isTrafficStop(frame)[1]
+    # cv2.imshow("FloorStop[left] trafficStop[right]", np.hstack([floorRed, trafficRed]))
     now = time.time()
     dt = now - lastTime
 

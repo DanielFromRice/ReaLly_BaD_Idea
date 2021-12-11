@@ -219,7 +219,7 @@ speed = 8
 lastTime = 0
 lastError = 0
 
-kp = 0.4
+kp = 0.05
 kd = kp * 0.65
 
 counter = 0
@@ -245,28 +245,52 @@ while counter < max_ticks:
     dt = now - lastTime
 
     deviation = steering_angle - 90
-    error = abs(deviation)
-    
-    if deviation < 5 and deviation > -5:
-        deviation = 0
-        error = 0
-        PWM.set_duty_cycle(steeringPin, 7.5)
+    # error = abs(deviation)
 
-    elif deviation > 5:
-        PWM.set_duty_cycle(steeringPin, 6) 
-        
-
-    elif deviation < -5:
-        PWM.set_duty_cycle(steeringPin, 9) 
-
-    derivative = kd * (error - lastError) / dt
+    ### PD Code, remove if breaking things
+    error = deviation
+    base_turn = 7.5
     proportional = kp * error
-    PD = int(speed + derivative + proportional)
-    spd = abs(PD)
+    derivative = kd * (error - lastError) / dt
 
-    if spd > 25:
-        spd = 25
+    turn_amt = base_turn + proportional + derivative
+
+    if turn_amt > 7.2 and turn_amt < 7.8:
+        # May not need this condition
+        turn_amt = 7.5
+    elif turn_amt > 9:
+        turn_amt = 9
+    elif turn_amt < 6:
+        turn_amt = 6
+
+    PWM.set_duty_cycle(steeringPin, turn_amt)
+
+    # Set throttle here
+
+
+    ### END PD Code
+    ### Old steering code
+    # if deviation < 5 and deviation > -5:
+    #     deviation = 0
+    #     error = 0
+    #     PWM.set_duty_cycle(steeringPin, 7.5)
+
+    # elif deviation > 5:
+    #     PWM.set_duty_cycle(steeringPin, 6) 
         
+
+    # elif deviation < -5:
+    #     PWM.set_duty_cycle(steeringPin, 9) 
+
+    # derivative = kd * (error - lastError) / dt
+    # proportional = kp * error
+    # PD = int(speed + derivative + proportional)
+    # spd = abs(PD)
+
+    # if spd > 25:
+    #     spd = 25
+    ### END Old steering code
+
     # throttle.start(spd) - we keep the speed low and constant
 
     lastError = error

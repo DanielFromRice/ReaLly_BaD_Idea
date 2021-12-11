@@ -1,8 +1,6 @@
 import cv2
 import numpy as np
 
-
-
 def getImage():
     image = cv2.imread("red.png")
     return image
@@ -77,8 +75,9 @@ def getBoundaries(filename):
 
 
 while(1):
-
+    print("here")
     ret, frame = video.read()
+    print(ret)
     if ret == False:
         continue
     # frame = cv2.flip(frame, -1)
@@ -93,7 +92,7 @@ while(1):
     #     print(True)
     # else:
     #     print(False)
-    cv2.imshow("images", np.hstack([traffic_output, traffic_green_output]))
+    cv2.imshow("images", np.hstack([traffic_output, floor_output]))
     key = cv2.waitKey(1)
     if key == 27:
         break

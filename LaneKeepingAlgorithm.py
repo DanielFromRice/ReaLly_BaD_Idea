@@ -51,6 +51,14 @@ def initialize_car():
     """
 
 
+def stop():
+    PWM.set_duty_cycle(throttlePin, dont_move)
+
+
+def go():
+    PWM.set_duty_cycle(throttlePin, go_forward)
+
+
 def detect_edges(frame):
     # filter for blue lane lines
     hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)

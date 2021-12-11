@@ -5,6 +5,8 @@ import sys
 import time
 import Adafruit_BBIO.PWM as PWM
 # import detectRed
+from detectRed import isTrafficStop
+from detectRed import isGreenLight
 
 #Throttle
 throttlePin = "P8_13"
@@ -18,6 +20,10 @@ right = 6
 
 #Max number of loops
 max_ticks = 200
+
+#Booleans for handling stop light
+passedStopLight = False
+atStopLight = False
 
 
 def initialize_car():
@@ -221,6 +227,21 @@ while counter < max_ticks:
     # check for stop sign/traffic light every couple ticks
 
     ret,frame = video.read()
+
+    # if ((counter + 1) % 3) == 0:
+    #     if not passedStopLight:
+    #         if isTrafficStop(frame):
+    #             stop()
+    #             atStopLight = True
+    #             continue
+    #
+    # if not passedStopLight and atStopLight:
+    #     if isGreenLight(frame):
+    #         passedStopLight = True
+    #         atStopLight = False
+    #         go()
+    #     else:
+    #         continue
 
     #cv2.imshow("original",frame)
     edges = detect_edges(frame)

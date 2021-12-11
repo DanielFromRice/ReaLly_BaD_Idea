@@ -53,46 +53,78 @@ def isMostlyColor(image, redBoundary):
     :param redBoundary:
     :return:
     """
-    lower = np.array(redBoundary[0])
-    upper = np.array(redBoundary[1])
+    color_boundaries = redBoundary[0]
+    percentage = redBoundary[1]
+    lower = np.array(color_boundaries[0])
+    upper = np.array(color_boundaries[1])
     mask = cv2.inRange(image, lower, upper)
     output = cv2.bitwise_and(image, image, mask=mask)
     # print(np.count_nonzero(mask), mask.size)
-    result = (np.count_nonzero(mask) > (mask.size - np.count_nonzero(mask)))
+    percentage_detected = np.count_nonzero(mask) * 100 / np.size(mask)
+
+    result = percentage[0] < percentage_detected <= percentage[1]
+    if result:
+        print(percentage_detected)
     return result, output
 
-video = cv2.VideoCapture(1)
-video.set(cv2.CAP_PROP_FRAME_WIDTH, 320)
-video.set(cv2.CAP_PROP_FRAME_HEIGHT, 240)
 
 def getBoundaries(filename):
+    """
+    Reads the boundaries from the file filename
+    Format:
+        [0] lower: [H, S, V, lower percentage for classification of success]
+        [1] upper: [H, S, V, upper percentage for classification of success]
+    :param filename:
+    :return:
+    """
+    default_lower_percent = 50
+    default_upper_percent = 100
     with open(filename, "r") as f:
         boundaries = f.readlines()
-        lower = [int(val) for val in boundaries[0].split(",")]
-        upper = [int(val) for val in boundaries[1].split(",")]
+        lower_data = [int(val) for val in boundaries[0].split(",")]
+        upper_data = [int(val) for val in boundaries[1].split(",")]
+
+        if len(lower_data) >= 4:
+            lower_percent = lower_data[3]
+        else:
+            lower_percent = default_lower_percent
+
+        if len(upper_data) >= 4:
+            upper_percent = upper_data[3]
+        else:
+            upper_percent = default_upper_percent
+
+        lower = lower_data[:3]
+        upper = upper_data[:3]
         boundaries = [lower, upper]
-    return boundaries
-
-
-while(1):
-    print("here")
-    ret, frame = video.read()
-    print(ret)
-    if ret == False:
-        continue
-    # frame = cv2.flip(frame, -1)
-    frame = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-
-    # cv2.imshow("original", frame)
-    floorStop, floor_output = isFloorStop(frame)
-    trafficStop, traffic_output = isTrafficStop(frame)
-    trafficGo, traffic_green_output = isGreenLight(frame)
-    #
-    # if floorStop:
-    #     print(True)
-    # else:
-    #     print(False)
-    cv2.imshow("images", np.hstack([traffic_output, floor_output]))
-    key = cv2.waitKey(1)
-    if key == 27:
-        break
+        percentages = [lower_percent, upper_percent]
+    return boundaries, percentages
+# video = cv2.VideoCapture(1)
+# video.set(cv2.CAP_PROP_FRAME_WIDTH, 320)
+# video.set(cv2.CAP_PROP_FRAME_HEIGHT, 240)
+#
+# while(1):
+#     ret, frame = video.read()
+#     if ret == False:
+#         print("Erroring out")
+#         continue
+#     # frame = cv2.flip(frame, -1)
+#     frame = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+#
+#     # cv2.imshow("original", frame)
+#     floorStop, floor_output = isFloorStop(frame)
+#     trafficStop, traffic_output = isTrafficStop(frame)
+#     if trafficStop:
+#         print("Traffic stop detected!")
+#     trafficGo, traffic_green_output = isGreenLight(frame)
+#     if trafficGo:
+#         print("Traffic Go detected!")
+#     #
+#     # if floorStop:
+#     #     print(True)
+#     # else:
+#     #     print(False)
+#     cv2.imshow("images", np.hstack([traffic_output, traffic_green_output]))
+#     key = cv2.waitKey(1)
+#     if key == 27:
+#         break

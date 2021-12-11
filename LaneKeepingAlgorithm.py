@@ -10,7 +10,7 @@ from detectRed import isGreenLight
 
 #Throttle
 throttlePin = "P8_13"
-go_forward = 7.935
+go_forward = 7.95
 dont_move = 7.5
 
 #Steering
@@ -19,7 +19,7 @@ left = 9
 right = 6
 
 #Max number of loops
-max_ticks = 20000
+max_ticks = 200
 
 #Booleans for handling stop light
 passedStopLight = False
@@ -33,28 +33,7 @@ def initialize_car():
     print("did the pwm")
 
     input()
-    """
-    PWM.set_duty_cycle(throttlePin, 7.92)
-    print("forward")
-    time.sleep(10)
-    PWM.set_duty_cycle(throttlePin, 7.5)
-    PWM.set_duty_cycle(throttlePin, 7.05)
-    print("back")
-    input()
-    PWM.set_duty_cycle(throttlePin, 7.5)
-    """ 
     PWM.start(steeringPin, dont_move, frequency=50)
-    """ 
-    print("go gayly forward")
-    time.sleep(1)
-    PWM.set_duty_cycle(steeringPin, 6)
-    print("going to 6")
-    input()
-    PWM.set_duty_cycle(steeringPin, 9)
-    print("going to 9")
-    input()
-    PWM.set_duty_cycle(steeringPin, 7.5)
-    """
 
 
 def stop():
@@ -87,8 +66,8 @@ def region_of_interest(edges):
     # only focus lower half of the screen
     polygon = np.array([[
         (0, height),
-        (0,  height/2),
-        (width , height/2),
+        (0, 2*height/3),
+        (width , 2*height/3),
         (width , height),
     ]], np.int32)
 
@@ -238,17 +217,16 @@ speed = 8
 lastTime = 0
 lastError = 0
 
-kp = 0.05
-kd = kp * 0.75
+kp = 0.06
+kd = kp * 0.65
 
 counter = 0
-#PWM.set_duty_cycle(throttlePin, go_forward)
+go()
 
 while counter < max_ticks:
     # check for stop sign/traffic light every couple ticks
 
     ret,frame = video.read()
-    frame = cv2.flip(frame,-1)
 
     # if ((counter + 1) % 3) == 0:
     #     if not passedStopLight:
@@ -273,7 +251,7 @@ while counter < max_ticks:
     lane_lines_image = display_lines(frame,lane_lines)
     steering_angle = get_steering_angle(frame, lane_lines)
     heading_image = display_heading_line(lane_lines_image,steering_angle)
-    cv2.imshow("heading line",heading_image)
+    #cv2.imshow("heading line",heading_image)
     # floorRed = detectRed.isFloorStop(frame)[1]
     # trafficRed = detectRed.isTrafficStop(frame)[1]
     # cv2.imshow("FloorStop[left] trafficStop[right]", np.hstack([floorRed, trafficRed]))
@@ -301,8 +279,6 @@ while counter < max_ticks:
 
     PWM.set_duty_cycle(steeringPin, turn_amt)
     print(turn_amt)
-
-    # Set throttle here
 
 
     ### END PD Code

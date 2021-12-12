@@ -228,20 +228,27 @@ while counter < max_ticks:
 
     ret,frame = video.read()
 
-    # if ((counter + 1) % 3) == 0:
-    #     if not passedStopLight:
-    #         if isTrafficStop(frame):
-    #             stop()
-    #             atStopLight = True
-    #             continue
-    #
-    # if not passedStopLight and atStopLight:
-    #     if isGreenLight(frame):
-    #         passedStopLight = True
-    #         atStopLight = False
-    #         go()
-    #     else:
-    #         continue
+    if ((counter + 1) % 3) == 0:
+        print("checking for stop light?")
+        if not passedStopLight and not atStopLight:
+            trafficStopBool, _ = isTrafficStop(frame)
+            print(trafficStopBool)
+            if trafficStopBool:
+                print("detected red light, stopping")
+                stop()
+                atStopLight = True
+                continue
+    
+    if not passedStopLight and atStopLight:
+        print("waiting at red light")
+        trafficGoBool, _ = isGreenLight(frame)
+        if trafficGoBool:
+            passedStopLight = True
+            atStopLight = False
+            print("green light!")
+            go()
+        else:
+            continue
 
     #cv2.imshow("original",frame)
     edges = detect_edges(frame)
@@ -250,7 +257,7 @@ while counter < max_ticks:
     lane_lines = average_slope_intercept(frame,line_segments)
     lane_lines_image = display_lines(frame,lane_lines)
     steering_angle = get_steering_angle(frame, lane_lines)
-    heading_image = display_heading_line(lane_lines_image,steering_angle)
+    #heading_image = display_heading_line(lane_lines_image,steering_angle)
     #cv2.imshow("heading line",heading_image)
     # floorRed = detectRed.isFloorStop(frame)[1]
     # trafficRed = detectRed.isTrafficStop(frame)[1]

@@ -102,7 +102,7 @@ def getBoundaries(filename):
 
 test = 1
 if test:
-    video = cv2.VideoCapture(0)
+    video = cv2.VideoCapture(1)
     video.set(cv2.CAP_PROP_FRAME_WIDTH, 320)
     video.set(cv2.CAP_PROP_FRAME_HEIGHT, 240)
 

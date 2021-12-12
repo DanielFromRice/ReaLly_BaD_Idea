@@ -10,7 +10,7 @@ import Adafruit_BBIO.PWM as PWM
 
 #Throttle
 throttlePin = "P8_13"
-go_forward = 7.955
+go_forward = 7.95
 dont_move = 7.5
 
 #Steering
@@ -325,7 +325,7 @@ lastTime = 0
 lastError = 0
 
 kp = 0.07
-kd = kp * 0.6
+kd = kp * 0.5
 
 counter = 0
 go()

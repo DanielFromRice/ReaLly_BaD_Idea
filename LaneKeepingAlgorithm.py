@@ -10,7 +10,7 @@ import Adafruit_BBIO.PWM as PWM
 
 #Throttle
 throttlePin = "P8_13"
-go_forward = 7.95
+go_forward = 7.955
 dont_move = 7.5
 
 #Steering
@@ -19,7 +19,7 @@ left = 9
 right = 6
 
 #Max number of loops
-max_ticks = 200
+max_ticks = 2000
 
 #Booleans for handling stop light
 passedStopLight = False
@@ -82,14 +82,16 @@ def isMostlyColor(image, redBoundary):
     :param redBoundary:
     :return:
     """
+    hsv_img = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
     color_boundaries = redBoundary[0]
     percentage = redBoundary[1]
     lower = np.array(color_boundaries[0])
     upper = np.array(color_boundaries[1])
-    mask = cv2.inRange(image, lower, upper)
-    output = cv2.bitwise_and(image, image, mask=mask)
+    mask = cv2.inRange(hsv_img, lower, upper)
+    output = cv2.bitwise_and(hsv_img, hsv_img, mask=mask)
     # print(np.count_nonzero(mask), mask.size)
     percentage_detected = np.count_nonzero(mask) * 100 / np.size(mask)
+    print("percentage_detected " + str(percentage_detected) + " lower " + str(lower) + " upper " + str(upper))
 
     result = percentage[0] < percentage_detected <= percentage[1]
     if result:
@@ -171,8 +173,8 @@ def region_of_interest(edges):
     # only focus lower half of the screen
     polygon = np.array([[
         (0, height),
-        (0, 2*height/3),
-        (width , 2*height/3),
+        (0, height/2),
+        (width , height/2),
         (width , height),
     ]], np.int32)
 
@@ -322,8 +324,8 @@ speed = 8
 lastTime = 0
 lastError = 0
 
-kp = 0.06
-kd = kp * 0.65
+kp = 0.07
+kd = kp * 0.6
 
 counter = 0
 go()
@@ -331,29 +333,31 @@ go()
 while counter < max_ticks:
     # check for stop sign/traffic light every couple ticks
 
-    ret,frame = video.read()
-
-    if ((counter + 1) % 3) == 0:
-        print("checking for stop light?")
-        if not passedStopLight and not atStopLight:
-            trafficStopBool, _ = isTrafficStop(frame)
-            print(trafficStopBool)
-            if trafficStopBool:
-                print("detected red light, stopping")
-                stop()
-                atStopLight = True
-                continue
+    ret,original_frame = video.read()
     
-    if not passedStopLight and atStopLight:
-        print("waiting at red light")
-        trafficGoBool, _ = isGreenLight(frame)
-        if trafficGoBool:
-            passedStopLight = True
-            atStopLight = False
-            print("green light!")
-            go()
-        else:
-            continue
+    frame = cv2.resize(original_frame, (160, 120))
+
+    #if ((counter + 1) % 3) == 0:
+    #    print("checking for stop light?")
+    #    if not passedStopLight and not atStopLight:
+    #        trafficStopBool, _ = isTrafficStop(frame)
+    #        print(trafficStopBool)
+    #        if trafficStopBool:
+    #            print("detected red light, stopping")
+    #            stop()
+    #            atStopLight = True
+    #            continue
+    
+    #if not passedStopLight and atStopLight:
+    #    print("waiting at red light")
+    #    trafficGoBool, _ = isGreenLight(frame)
+    #    if trafficGoBool:
+    #        passedStopLight = True
+    #        atStopLight = False
+    #        print("green light!")
+    #        go()
+    #    else:
+    #        continue
 
     #cv2.imshow("original",frame)
     edges = detect_edges(frame)
@@ -441,7 +445,7 @@ PWM.stop(steeringPin)
 PWM.cleanup()
 
 
-test = 1
+test = 0
 if test:
     video = cv2.VideoCapture(1)
     video.set(cv2.CAP_PROP_FRAME_WIDTH, 320)

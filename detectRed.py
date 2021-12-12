@@ -100,7 +100,7 @@ def getBoundaries(filename):
         percentages = [lower_percent, upper_percent]
     return boundaries, percentages
 
-test = 1
+test = 0
 if test:
     video = cv2.VideoCapture(0)
     video.set(cv2.CAP_PROP_FRAME_WIDTH, 320)

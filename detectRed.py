@@ -100,13 +100,14 @@ def getBoundaries(filename):
         percentages = [lower_percent, upper_percent]
     return boundaries, percentages
 
-test = 0
+test = 1
 if test:
     video = cv2.VideoCapture(1)
     video.set(cv2.CAP_PROP_FRAME_WIDTH, 320)
     video.set(cv2.CAP_PROP_FRAME_HEIGHT, 240)
 
     while(1):
+        video = cv2.resize(video, (160, 120))
         ret, frame = video.read()
         if ret == False:
             print("Erroring out")

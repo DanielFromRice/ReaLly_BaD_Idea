@@ -1,5 +1,6 @@
 import cv2
 import numpy as np
+import matplotlib.pyplot as plt
 import math
 import sys
 import time
@@ -10,7 +11,7 @@ import Adafruit_BBIO.PWM as PWM
 
 #Throttle
 throttlePin = "P8_13"
-go_forward = 7.95
+go_forward = 7.91
 dont_move = 7.5
 
 #Steering
@@ -24,7 +25,9 @@ max_ticks = 2000
 #Booleans for handling stop light
 passedStopLight = False
 atStopLight = False
+passedFirstStopSign = False
 
+secondStopLightTick = 0
 
 
 def getImage():
@@ -92,7 +95,7 @@ def isMostlyColor(image, redBoundary):
     # print(np.count_nonzero(mask), mask.size)
     percentage_detected = np.count_nonzero(mask) * 100 / np.size(mask)
     print("percentage_detected " + str(percentage_detected) + " lower " + str(lower) + " upper " + str(upper))
-
+    
     result = percentage[0] < percentage_detected <= percentage[1]
     if result:
         print(percentage_detected)
@@ -112,21 +115,21 @@ def getBoundaries(filename):
     default_upper_percent = 100
     with open(filename, "r") as f:
         boundaries = f.readlines()
-        lower_data = [int(val) for val in boundaries[0].split(",")]
-        upper_data = [int(val) for val in boundaries[1].split(",")]
+        lower_data = [val for val in boundaries[0].split(",")]
+        upper_data = [val for val in boundaries[1].split(",")]
 
         if len(lower_data) >= 4:
-            lower_percent = lower_data[3]
+            lower_percent = float(lower_data[3])
         else:
             lower_percent = default_lower_percent
 
         if len(upper_data) >= 4:
-            upper_percent = upper_data[3]
+            upper_percent = float(upper_data[3])
         else:
             upper_percent = default_upper_percent
 
-        lower = lower_data[:3]
-        upper = upper_data[:3]
+        lower = [int(x) for x in lower_data[:3]]
+        upper = [int(x) for x in upper_data[:3]]
         boundaries = [lower, upper]
         percentages = [lower_percent, upper_percent]
     return boundaries, percentages
@@ -149,6 +152,10 @@ def stop():
 
 def go():
     PWM.set_duty_cycle(throttlePin, go_forward)
+
+
+def go_faster():
+    PWM.set_duty_cycle(throttlePin, go_forward + .025)
 
 
 def detect_edges(frame):
@@ -308,6 +315,20 @@ def get_steering_angle(frame, lane_lines):
 
     return steering_angle
 
+def plot_pd(p_vals, d_vals, error, turns, show_img=False):
+    plt.plot(p_vals, label="P values")
+    plt.plot(d_vals, label="D values")
+    #plt.plot(error, label="Error")
+    plt.plot(turns, label="Relative turns")
+    plt.xlabel("Frames")
+    plt.ylabel("Value")
+    plt.title("PD Values over time")
+    plt.legend()
+    plt.savefig("pd_plot.png")
+    if show_img:
+        plt.show()
+    plt.clf()
+
 initialize_car()
 
 video = cv2.VideoCapture(0)
@@ -324,11 +345,19 @@ speed = 8
 lastTime = 0
 lastError = 0
 
-kp = 0.07
-kd = kp * 0.5
+kp = 0.085
+kd = kp * 0.01
 
 counter = 0
 go()
+
+p_vals = []
+d_vals = []
+err_vals = []
+relative_turns = []
+
+stopSignCheck = 1
+sightDebug = False
 
 while counter < max_ticks:
     # check for stop sign/traffic light every couple ticks
@@ -337,45 +366,49 @@ while counter < max_ticks:
     
     frame = cv2.resize(original_frame, (160, 120))
 
-    # if ((counter + 1) % 3) == 0:
-    #    print("checking for stop light?")
-    #    if not passedStopLight and not atStopLight:
-    #        trafficStopBool, _ = isTrafficStop(frame)
-    #        print(trafficStopBool)
-    #        if trafficStopBool:
-    #            print("detected red light, stopping")
-    #            stop()
-    #            atStopLight = True
-    #            continue
-    #     # check for the first stop sign
-    #     elif passedStopLight and not passedFirstStopSign:
-    #         isStopSignBool, _ = isFloorStop(frame)
-    #         print("is a floor stop: ", isStopSignBool)
-    #         if isStopSignBool:
-    #             print("detected stop sign, stopping")
-    #             stop()
-    #             time.sleep(0.5)
-    #             passedFirstStopSign = True
-    #             go()
-    #     # check for the second stop sign
-    #     elif passedStopLight and passedFirstStopSign:
-    #         isStop2SignBool, _ = isFloorStop(frame)
-    #         print("is a floor stop: ", isStopSignBool)
-    #         if isStop2SignBool:
-    #             print("detected second stop sign, stopping")
-    #             stop()
-    #             break
+    if ((counter + 1) % stopSignCheck) == 0:
+        print("checking for stop light?")
+        if not passedStopLight and not atStopLight:
+            trafficStopBool, _ = isTrafficStop(frame)
+            print(trafficStopBool)
+            if trafficStopBool:
+                print("detected red light, stopping")
+                stop()
+                atStopLight = True
+                continue
+        # check for the first stop sign
+        if passedStopLight and not passedFirstStopSign:
+            isStopSignBool, floorSight = isFloorStop(frame)
+            if sightDebug:
+                cv2.imshow("floorSight", floorSight)
+            #print("is a floor stop: ", isStopSignBool)
+            if isStopSignBool:
+                print("detected first stop sign, stopping")
+                stop()
+                time.sleep(1)
+                passedFirstStopSign = True
+                secondStopSignTick = counter + 200
+                stopSignCheck = 3
+                go_faster()
+        # check for the second stop sign
+        elif passedStopLight and passedFirstStopSign and counter > secondStopSignTick:
+            isStop2SignBool, _ = isFloorStop(frame)
+            print("is a floor stop: ", isStopSignBool)
+            if isStop2SignBool:
+                print("detected second stop sign, stopping")
+                stop()
+                break
     
-    #if not passedStopLight and atStopLight:
-    #    print("waiting at red light")
-    #    trafficGoBool, _ = isGreenLight(frame)
-    #    if trafficGoBool:
-    #        passedStopLight = True
-    #        atStopLight = False
-    #        print("green light!")
-    #        go()
-    #    else:
-    #        continue
+    if not passedStopLight and atStopLight:
+        print("waiting at red light")
+        trafficGoBool, _ = isGreenLight(frame)
+        if trafficGoBool:
+            passedStopLight = True
+            atStopLight = False
+            print("green light!")
+            go()
+        else:
+            continue
 
     #cv2.imshow("original",frame)
     edges = detect_edges(frame)
@@ -401,6 +434,10 @@ while counter < max_ticks:
     proportional = kp * error
     derivative = kd * (error - lastError) / dt
 
+    p_vals.append(proportional)
+    d_vals.append(derivative)
+    err_vals.append(error)
+
     turn_amt = base_turn + proportional + derivative
 
     if turn_amt > 7.2 and turn_amt < 7.8:
@@ -412,9 +449,14 @@ while counter < max_ticks:
         turn_amt = right
 
     PWM.set_duty_cycle(steeringPin, turn_amt)
-    print(turn_amt)
+    #print(turn_amt)
+    relative_turns.append(turn_amt - 7.5)
 
 
+    #if (counter + 1) % 100 == 0:
+    #    stop()
+    #    plot_pd(p_vals, d_vals, err_vals, relative_turns, True)
+    #    go()
     ### END PD Code
     ### Old steering code
     # if deviation < 5 and deviation > -5:

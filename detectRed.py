@@ -107,7 +107,7 @@ if test:
     video.set(cv2.CAP_PROP_FRAME_HEIGHT, 240)
 
     while(1):
-
+        video = cv2.resize(video, (160, 120))
         ret, frame = video.read()
 
         if ret == False:

@@ -12,6 +12,9 @@ import Adafruit_BBIO.PWM as PWM
 #Throttle
 throttlePin = "P8_13"
 go_forward = 7.91
+go_faster_addition = 0.02
+go_faster_tick_delay = 30
+go_faster_tick = 0 #Do not change this here. Code will set this value after seeing stop sign
 dont_move = 7.5
 
 #Steering
@@ -45,6 +48,7 @@ def isFloorStop(frame):
     :param frame: Image
     :return: (True is the camera sees a stop light on the floor, false otherwise) and video output
     """
+    print("Checking for floor stop")
     boundaries = getFloorRedBoundaries()
     return isMostlyColor(frame, boundaries)
 
@@ -59,7 +63,7 @@ def isTrafficStop(frame):
     :param frame:
     :return:
     """
-
+    print("Checking for traffic stop")
     boundaries = getTrafficStopBoundaries()
     return isMostlyColor(frame, boundaries)
 
@@ -74,6 +78,7 @@ def isGreenLight(frame):
     :param frame:
     :return:
     """
+    print("Checking For Green Light")
     boundaries = getTrafficGoBoundaries()
     return isMostlyColor(frame, boundaries)
 
@@ -147,7 +152,7 @@ def initialize_car():
 
 
 def stop():
-    PWM.set_duty_cycle(throttlePin, dont_move)
+    PWM.set_duty_cycle(throttlePin, 7.1)
 
 
 def go():
@@ -155,7 +160,11 @@ def go():
 
 
 def go_faster():
-    PWM.set_duty_cycle(throttlePin, go_forward + .025)
+    PWM.set_duty_cycle(throttlePin, go_forward + go_faster_addition)
+
+
+def go_backwards():
+    PWM.set_duty_cycle(throttlePin, 7.1)
 
 
 def detect_edges(frame):
@@ -358,16 +367,17 @@ relative_turns = []
 
 stopSignCheck = 1
 sightDebug = False
-
+isStopSignBool = False
 while counter < max_ticks:
     # check for stop sign/traffic light every couple ticks
 
     ret,original_frame = video.read()
     
     frame = cv2.resize(original_frame, (160, 120))
-
+    if sightDebug:
+        cv2.imshow("Resized Frame", frame)
     if ((counter + 1) % stopSignCheck) == 0:
-        print("checking for stop light?")
+        #print("checking for stop light?")
         if not passedStopLight and not atStopLight:
             trafficStopBool, _ = isTrafficStop(frame)
             print(trafficStopBool)
@@ -377,7 +387,7 @@ while counter < max_ticks:
                 atStopLight = True
                 continue
         # check for the first stop sign
-        if passedStopLight and not passedFirstStopSign:
+        elif passedStopLight and not passedFirstStopSign:
             isStopSignBool, floorSight = isFloorStop(frame)
             if sightDebug:
                 cv2.imshow("floorSight", floorSight)
@@ -385,11 +395,11 @@ while counter < max_ticks:
             if isStopSignBool:
                 print("detected first stop sign, stopping")
                 stop()
-                time.sleep(1)
+                time.sleep(2)
                 passedFirstStopSign = True
                 secondStopSignTick = counter + 200
                 stopSignCheck = 3
-                go_faster()
+                go_faster_tick = counter + go_faster_tick_delay
         # check for the second stop sign
         elif passedStopLight and passedFirstStopSign and counter > secondStopSignTick:
             isStop2SignBool, _ = isFloorStop(frame)
@@ -398,6 +408,8 @@ while counter < max_ticks:
                 print("detected second stop sign, stopping")
                 stop()
                 break
+    if isStopSignBool and counter == go_faster_tick:
+         go_faster()
     
     if not passedStopLight and atStopLight:
         print("waiting at red light")
@@ -424,7 +436,8 @@ while counter < max_ticks:
     # cv2.imshow("FloorStop[left] trafficStop[right]", np.hstack([floorRed, trafficRed]))
     now = time.time()
     dt = now - lastTime
-
+    if sightDebug:
+        cv2.imshow("Cropped sight", roi)
     deviation = steering_angle - 90
     # error = abs(deviation)
 

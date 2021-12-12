@@ -337,7 +337,7 @@ while counter < max_ticks:
     
     frame = cv2.resize(original_frame, (160, 120))
 
-    #if ((counter + 1) % 3) == 0:
+    # if ((counter + 1) % 3) == 0:
     #    print("checking for stop light?")
     #    if not passedStopLight and not atStopLight:
     #        trafficStopBool, _ = isTrafficStop(frame)
@@ -347,6 +347,24 @@ while counter < max_ticks:
     #            stop()
     #            atStopLight = True
     #            continue
+    #     # check for the first stop sign
+    #     elif passedStopLight and not passedFirstStopSign:
+    #         isStopSignBool, _ = isFloorStop(frame)
+    #         print("is a floor stop: ", isStopSignBool)
+    #         if isStopSignBool:
+    #             print("detected stop sign, stopping")
+    #             stop()
+    #             time.sleep(0.5)
+    #             passedFirstStopSign = True
+    #             go()
+    #     # check for the second stop sign
+    #     elif passedStopLight and passedFirstStopSign:
+    #         isStop2SignBool, _ = isFloorStop(frame)
+    #         print("is a floor stop: ", isStopSignBool)
+    #         if isStop2SignBool:
+    #             print("detected second stop sign, stopping")
+    #             stop()
+    #             break
     
     #if not passedStopLight and atStopLight:
     #    print("waiting at red light")

@@ -35,31 +35,34 @@ passedFirstStopSign = False
 secondStopLightTick = 0
 
 
-def getImage():
-    image = cv2.imread("red.png")
-    return image
-
-
-def getFloorRedBoundaries():
+def getRedFloorBoundaries():
+    """
+    Gets the hsv boundaries and success boundaries indicating if the floor is red
+    :return:
+    """
     return getBoundaries("redboundaries.txt")
 
 
-def isFloorStop(frame):
+def isRedFloorVisible(frame):
     """
     Detects whether or not the floor is red
     :param frame: Image
     :return: (True is the camera sees a stop light on the floor, false otherwise) and video output
     """
     print("Checking for floor stop")
-    boundaries = getFloorRedBoundaries()
+    boundaries = getRedFloorBoundaries()
     return isMostlyColor(frame, boundaries)
 
 
 def getTrafficStopBoundaries():
+    """
+    Gets the traffic red light hsv boundaries and success boundaries
+    :return:
+    """
     return getBoundaries("trafficRedBoundaries.txt")
 
 
-def isTrafficStop(frame):
+def isTrafficRedLightVisible(frame):
     """
     Detects whether or not we can see a stop sign
     :param frame:
@@ -70,18 +73,22 @@ def isTrafficStop(frame):
     return isMostlyColor(frame, boundaries)
 
 
-def getTrafficGoBoundaries():
+def getTrafficGreenLightBoundaries():
+    """
+    Gets the traffic green light hsv boundaries and success boundaries
+    :return:
+    """
     return getBoundaries("trafficGreenboundaries.txt")
 
 
-def isGreenLight(frame):
+def isTrafficGreenLightVisible(frame):
     """
     Detects whether or not we can see a green traffic light
     :param frame:
     :return:
     """
     print("Checking For Green Light")
-    boundaries = getTrafficGoBoundaries()
+    boundaries = getTrafficGreenLightBoundaries()
     return isMostlyColor(frame, boundaries)
 
 
@@ -415,7 +422,7 @@ while counter < max_ticks:
     if ((counter + 1) % stopSignCheck) == 0:
         #print("checking for stop light?")
         if not passedStopLight and not atStopLight:
-            trafficStopBool, _ = isTrafficStop(frame)
+            trafficStopBool, _ = isTrafficRedLightVisible(frame)
             print(trafficStopBool)
             if trafficStopBool:
                 print("detected red light, stopping")
@@ -424,7 +431,7 @@ while counter < max_ticks:
                 continue
         # check for the first stop sign
         elif passedStopLight and not passedFirstStopSign:
-            isStopSignBool, floorSight = isFloorStop(frame)
+            isStopSignBool, floorSight = isRedFloorVisible(frame)
             if sightDebug:
                 cv2.imshow("floorSight", floorSight)
             #print("is a floor stop: ", isStopSignBool)
@@ -439,7 +446,7 @@ while counter < max_ticks:
                 print("first stop finished!")  
       # check for the second stop sign
         elif passedStopLight and passedFirstStopSign and counter > secondStopSignTick:
-            isStop2SignBool, _ = isFloorStop(frame)
+            isStop2SignBool, _ = isRedFloorVisible(frame)
             print("is a floor stop: ", isStopSignBool)
             if isStop2SignBool:
                 print("detected second stop sign, stopping")
@@ -453,7 +460,7 @@ while counter < max_ticks:
     
     if not passedStopLight and atStopLight:
         print("waiting at red light")
-        trafficGoBool, _ = isGreenLight(frame)
+        trafficGoBool, _ = isTrafficGreenLightVisible(frame)
         if trafficGoBool:
             passedStopLight = True
             atStopLight = False
@@ -561,35 +568,3 @@ PWM.cleanup()
 
 plot_pd(p_vals, d_vals, err_vals, True)
 plot_pwm(speed_pwm, steer_pwm, err_vals, True)
-
-test = 0
-if test:
-    video = cv2.VideoCapture(1)
-    video.set(cv2.CAP_PROP_FRAME_WIDTH, 320)
-    video.set(cv2.CAP_PROP_FRAME_HEIGHT, 240)
-
-    while (1):
-        ret, frame = video.read()
-        if ret == False:
-            print("Erroring out")
-            continue
-        # frame = cv2.flip(frame, -1)
-        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-
-        # cv2.imshow("original", frame)
-        floorStop, floor_output = isFloorStop(frame)
-        trafficStop, traffic_output = isTrafficStop(frame)
-        if trafficStop:
-            print("Traffic stop detected!")
-        trafficGo, traffic_green_output = isGreenLight(frame)
-        if trafficGo:
-            print("Traffic Go detected!")
-        #
-        # if floorStop:
-        #     print(True)
-        # else:
-        #     print(False)
-        cv2.imshow("images", np.hstack([traffic_output, traffic_green_output]))
-        key = cv2.waitKey(1)
-        if key == 27:
-            break

@@ -9,6 +9,8 @@ import Adafruit_BBIO.PWM as PWM
 #from detectRed import isTrafficStop
 #from detectRed import isGreenLight
 
+# based on: https://www.instructables.com/Autonomous-Lane-Keeping-Car-Using-Raspberry-Pi-and/
+
 #Throttle
 throttlePin = "P8_13"
 go_forward = 7.91
@@ -140,7 +142,6 @@ def getBoundaries(filename):
     return boundaries, percentages
 
 
-
 def initialize_car():
     # give 7.5% duty at 50Hz to throttle
     print("starting function")
@@ -182,6 +183,7 @@ def detect_edges(frame):
 
     return edges
 
+
 def region_of_interest(edges):
     height, width = edges.shape
     mask = np.zeros_like(edges)
@@ -201,6 +203,7 @@ def region_of_interest(edges):
 
     return cropped_edges
 
+
 def detect_line_segments(cropped_edges):
     rho = 1
     theta = np.pi / 180
@@ -210,6 +213,7 @@ def detect_line_segments(cropped_edges):
                                     np.array([]), minLineLength=5, maxLineGap=150)
 
     return line_segments
+
 
 def average_slope_intercept(frame, line_segments):
     lane_lines = []
@@ -253,6 +257,7 @@ def average_slope_intercept(frame, line_segments):
 
     return lane_lines
 
+
 def make_points(frame, line):
     height, width, _ = frame.shape
 
@@ -268,6 +273,7 @@ def make_points(frame, line):
     x2 = int((y2 - intercept) / slope)
 
     return [[x1, y1, x2, y2]]
+
 
 def display_lines(frame, lines, line_color=(0, 255, 0), line_width=6):
     line_image = np.zeros_like(frame)
@@ -298,6 +304,7 @@ def display_heading_line(frame, steering_angle, line_color=(0, 0, 255), line_wid
 
     return heading_image
 
+
 def get_steering_angle(frame, lane_lines):
 
     height,width,_ = frame.shape
@@ -324,16 +331,42 @@ def get_steering_angle(frame, lane_lines):
 
     return steering_angle
 
-def plot_pd(p_vals, d_vals, error, turns, show_img=False):
-    plt.plot(p_vals, label="P values")
-    plt.plot(d_vals, label="D values")
-    #plt.plot(error, label="Error")
-    plt.plot(turns, label="Relative turns")
-    plt.xlabel("Frames")
-    plt.ylabel("Value")
+
+def plot_pd(p_vals, d_vals, error, show_img=False):
+    fig, ax1 = plt.subplots()
+    t_ax = np.arange(len(p_vals))
+    ax1.plot(t_ax, p_vals, '-', label="P values")
+    ax1.plot(t_ax, d_vals, '-', label="D values")
+    ax2 = ax1.twinx()
+    ax2.plot(t_ax, error, '--r', label="Error")
+    #plt.plot(turns, label="Relative turns")
+    ax1.set_xlabel("Frames")
+    ax1.set_ylabel("PD Value")
+    ax2.set_ylim(-90, 90)
+    ax2.set_ylabel("Error Value")
     plt.title("PD Values over time")
-    plt.legend()
+    fig.legend()
+    fig.tight_layout()
     plt.savefig("pd_plot.png")
+    if show_img:
+        plt.show()
+    plt.clf()
+
+
+def plot_pwm(speed_pwms, turn_pwms, error, show_img=False):
+    fig, ax1 = plt.subplots()
+    t_ax = np.arange(len(speed_pwms))
+    ax1.plot(t_ax, speed_pwms, '-', label="Speed PWM")
+    ax1.plot(t_ax, turn_pwms, '-', label="Steering PWM")
+    ax2 = ax1.twinx()
+    ax2.plot(t_ax, error, '--r', label="Error")
+    #plt.plot(turns, label="Relative turns")
+    ax1.set_xlabel("Frames")
+    ax1.set_ylabel("PWM Values")
+    ax2.set_ylabel("Error Value")
+    plt.title("PWM Values over time")
+    fig.legend()
+    plt.savefig("pwm_plot.png")
     if show_img:
         plt.show()
     plt.clf()
@@ -364,6 +397,9 @@ p_vals = []
 d_vals = []
 err_vals = []
 relative_turns = []
+speed_pwm = []
+steer_pwm = []
+current_speed = go_forward
 
 stopSignCheck = 1
 sightDebug = False
@@ -412,6 +448,7 @@ while counter < max_ticks:
     if isStopSignBool and counter == go_faster_tick:
          print("Going FASTER")
          go_faster()
+         current_speed += go_faster_addition 
     
     if not passedStopLight and atStopLight:
         print("waiting at red light")
@@ -466,6 +503,8 @@ while counter < max_ticks:
     PWM.set_duty_cycle(steeringPin, turn_amt)
     #print(turn_amt)
     relative_turns.append(turn_amt - 7.5)
+    steer_pwm.append(turn_amt)
+    speed_pwm.append(current_speed)
 
 
     #if (counter + 1) % 100 == 0:
@@ -519,6 +558,8 @@ PWM.stop(throttlePin)
 PWM.stop(steeringPin)
 PWM.cleanup()
 
+plot_pd(p_vals, d_vals, err_vals, True)
+plot_pwm(speed_pwm, steer_pwm, err_vals, True)
 
 test = 0
 if test:

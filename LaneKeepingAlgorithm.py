@@ -14,7 +14,7 @@ import Adafruit_BBIO.PWM as PWM
 #Throttle
 throttlePin = "P8_13"
 go_forward = 7.91
-go_faster_addition = 0.02
+go_faster_addition = 0.022
 go_faster_tick_delay = 80
 go_faster_tick = 0 #Do not change this here. Code will set this value after seeing stop sign
 dont_move = 7.5
@@ -388,7 +388,7 @@ lastTime = 0
 lastError = 0
 
 kp = 0.085
-kd = kp * 0.01
+kd = kp * 0.1
 
 counter = 0
 go()
@@ -436,7 +436,8 @@ while counter < max_ticks:
                 secondStopSignTick = counter + 200
                 stopSignCheck = 3
                 go_faster_tick = counter + go_faster_tick_delay
-        # check for the second stop sign
+                print("first stop finished!")  
+      # check for the second stop sign
         elif passedStopLight and passedFirstStopSign and counter > secondStopSignTick:
             isStop2SignBool, _ = isFloorStop(frame)
             print("is a floor stop: ", isStopSignBool)

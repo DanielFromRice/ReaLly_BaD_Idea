@@ -35,7 +35,7 @@ secondStopLightTick = 0
 def getRedFloorBoundaries():
     """
     Gets the hsv boundaries and success boundaries indicating if the floor is red
-    :return:
+    :return: [[lower color and success boundaries for red floor], [upper color and success boundaries for red floor]]
     """
     return getBoundaries("redboundaries.txt")
 
@@ -44,7 +44,7 @@ def isRedFloorVisible(frame):
     """
     Detects whether or not the floor is red
     :param frame: Image
-    :return: (True is the camera sees a stop light on the floor, false otherwise) and video output
+    :return: [(True is the camera sees a red on the floor, false otherwise), video output]
     """
     print("Checking for floor stop")
     boundaries = getRedFloorBoundaries()
@@ -54,7 +54,7 @@ def isRedFloorVisible(frame):
 def getTrafficRedLightBoundaries():
     """
     Gets the traffic red light hsv boundaries and success boundaries
-    :return:
+    :return: [[lower color and success boundaries for red light], [upper color and success boundaries for red light]]
     """
     return getBoundaries("trafficRedBoundaries.txt")
 
@@ -63,7 +63,7 @@ def isTrafficRedLightVisible(frame):
     """
     Detects whether or not we can see a stop sign
     :param frame:
-    :return:
+    :return: [(True is the camera sees a stop light, false otherwise), video output]
     """
     print("Checking for traffic stop")
     boundaries = getTrafficRedLightBoundaries()
@@ -73,7 +73,7 @@ def isTrafficRedLightVisible(frame):
 def getTrafficGreenLightBoundaries():
     """
     Gets the traffic green light hsv boundaries and success boundaries
-    :return:
+    :return: [[lower color and success boundaries for green light], [upper color and success boundaries for green light]]
     """
     return getBoundaries("trafficGreenboundaries.txt")
 
@@ -82,31 +82,36 @@ def isTrafficGreenLightVisible(frame):
     """
     Detects whether or not we can see a green traffic light
     :param frame:
-    :return:
+    :return: [(True is the camera sees a green light, false otherwise), video output]
     """
     print("Checking For Green Light")
     boundaries = getTrafficGreenLightBoundaries()
     return isMostlyColor(frame, boundaries)
 
 
-def isMostlyColor(image, redBoundary):
+def isMostlyColor(image, boundaries):
     """
     Detects whether or not the majority of a color on the screen is a particular color
     :param image:
-    :param redBoundary:
-    :return:
+    :param boundaries: [[color boundaries], [success boundaries]]
+    :return: boolean if image satisfies provided boundaries, and an image used for debugging
     """
+    #Convert to HSV color space
     hsv_img = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
-    color_boundaries = redBoundary[0]
-    percentage = redBoundary[1]
+
+    #parse out the color boundaries and the success boundaries
+    color_boundaries = boundaries[0]
+    percentage = boundaries[1]
+
     lower = np.array(color_boundaries[0])
     upper = np.array(color_boundaries[1])
     mask = cv2.inRange(hsv_img, lower, upper)
     output = cv2.bitwise_and(hsv_img, hsv_img, mask=mask)
-    # print(np.count_nonzero(mask), mask.size)
+
+    #Calculate what percentage of image falls between color boundaries
     percentage_detected = np.count_nonzero(mask) * 100 / np.size(mask)
     print("percentage_detected " + str(percentage_detected) + " lower " + str(lower) + " upper " + str(upper))
-
+    # If the percentage percentage_detected is betweeen the success boundaries, we return true, otherwise false for result
     result = percentage[0] < percentage_detected <= percentage[1]
     if result:
         print(percentage_detected)
@@ -119,8 +124,8 @@ def getBoundaries(filename):
     Format:
         [0] lower: [H, S, V, lower percentage for classification of success]
         [1] upper: [H, S, V, upper percentage for classification of success]
-    :param filename:
-    :return:
+    :param filename: file containing boundary information as above
+    :return: [[lower color and success boundaries], [upper color and success boundaries]]
     """
     default_lower_percent = 50
     default_upper_percent = 100

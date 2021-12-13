@@ -54,7 +54,7 @@ def isRedFloorVisible(frame):
     return isMostlyColor(frame, boundaries)
 
 
-def getTrafficStopBoundaries():
+def getTrafficRedLightBoundaries():
     """
     Gets the traffic red light hsv boundaries and success boundaries
     :return:
@@ -69,7 +69,7 @@ def isTrafficRedLightVisible(frame):
     :return:
     """
     print("Checking for traffic stop")
-    boundaries = getTrafficStopBoundaries()
+    boundaries = getTrafficRedLightBoundaries()
     return isMostlyColor(frame, boundaries)
 
 

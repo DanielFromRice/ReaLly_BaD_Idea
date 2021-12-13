@@ -408,7 +408,9 @@ while counter < max_ticks:
                 print("detected second stop sign, stopping")
                 stop()
                 break
+
     if isStopSignBool and counter == go_faster_tick:
+         print("Going FASTER")
          go_faster()
     
     if not passedStopLight and atStopLight:

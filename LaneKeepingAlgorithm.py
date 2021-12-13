@@ -13,7 +13,7 @@ import Adafruit_BBIO.PWM as PWM
 throttlePin = "P8_13"
 go_forward = 7.91
 go_faster_addition = 0.02
-go_faster_tick_delay = 30
+go_faster_tick_delay = 80
 go_faster_tick = 0 #Do not change this here. Code will set this value after seeing stop sign
 dont_move = 7.5
 
